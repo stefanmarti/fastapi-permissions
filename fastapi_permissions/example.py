@@ -18,6 +18,10 @@ from fastapi_permissions import (
     list_permissions,
 )
 
+from fastapi_permissions import (
+    has_permission, Allow, All, Everyone, Authenticated
+)
+
 # >>> THIS IS NEW
 
 # import of the new "permission" module for row level permissions
@@ -173,9 +177,9 @@ class Item(BaseModel):
         appended at the end.
         """
         return [
-            (Allow, Authenticated, "view"),
+            # (Allow, Authenticated, "view"),
             (Allow, "role:admin", "use"),
-            (Allow, f"user:{self.owner}", "use"),
+            (Allow, f"user:{self.owner}", "view"),
         ]
 
 
@@ -184,7 +188,7 @@ class Item(BaseModel):
 
 
 class ItemListResource:
-    __acl__ = [(Allow, Authenticated, "view")]
+    __acl__ = [(Allow, "user:alice", "view")]
 
 
 # you can even use just a list
@@ -267,12 +271,20 @@ async def show_items(
         index: list_permissions(user.principals, get_item(index))
         for index in fake_items_db
     }
-    return [
-        {
-            "items": fake_items_db,
-            "available_permissions": available_permissions,
-        }
-    ]
+
+    allowed = [item for item in fake_items_db if has_permission(user.principals, "view", get_item(index))]
+    return allowed
+    # for index in fake_items_db:
+    #     if has_permission(user.principals, "view", get_item(index)):
+    #         return index[]
+        
+
+    # return [
+    #     {
+    #         "items": fake_items_db,
+    #         "available_permissions": available_permissions,
+    #     }
+    # ]
 
 
 # permission result for the fake users:
